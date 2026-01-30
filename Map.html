@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Philippines Location with Address & Share Link</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <!-- Leaflet CSS -->
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    />
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            padding: 10px;
+        }
+        #map {
+            height: 400px;
+            width: 100%;
+            margin-top: 10px;
+        }
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+        .box {
+            background: #f2f2f2;
+            padding: 10px;
+            margin-top: 10px;
+            border-radius: 5px;
+            text-align: left;
+        }
+        a {
+            word-break: break-all;
+        }
+    </style>
+</head>
+<body>
+
+<h2>📍 My Location (Philippines)</h2>
+
+<button onclick="getLocation()">Show My Location</button>
+
+<p id="status">Map loaded (Philippines)</p>
+
+<div class="box">
+    <b>Coordinates</b><br>
+    Latitude: <span id="lat">---</span><br>
+    Longitude: <span id="lng">---</span>
+</div>
+
+<div class="box">
+    <b>Address</b>
+    <p id="address">---</p>
+</div>
+
+<div class="box">
+    <b>Share Location</b>
+    <p><a id="shareLink" href="#" target="_blank">---</a></p>
+</div>
+
+<div id="map"></div>
+
+<!-- Leaflet JS -->
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<script>
+    // Default center: Philippines
+    const philippines = [12.8797, 121.7740];
+    const map = L.map('map').setView(philippines, 6);
+
+    // OpenStreetMap tiles (NO API KEY)
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; OpenStreetMap contributors'
+    }).addTo(map);
+
+    let marker;
+
+    function getLocation() {
+        if (!navigator.geolocation) {
+            document.getElementById("status").innerText =
+                "Geolocation not supported.";
+            return;
+        }
+
+        document.getElementById("status").innerText =
+            "Getting your location...";
+
+        navigator.geolocation.getCurrentPosition(
+            position => {
+                const lat = position.coords.latitude;
+                const lng = position.coords.longitude;
+
+                document.getElementById("lat").innerText = lat;
+                document.getElementById("lng").innerText = lng;
+
+                const userLocation = [lat, lng];
+
+                if (!marker) {
+                    marker = L.marker(userLocation)
+                        .addTo(map)
+                        .bindPopup("📍 You are here")
+                        .openPopup();
+                } else {
+                    marker.setLatLng(userLocation);
+                }
+
+                map.setView(userLocation, 16);
+                document.getElementById("status").innerText =
+                    "Location found!";
+
+                // Reverse Geocoding (Address)
+                fetch(`https://nominatim.openstreetmap.org/reverse?format=json&addressdetails=1&lat=${lat}&lon=${lng}`)
+                    .then(res => res.json())
+                    .then(data => {
+                        document.getElementById("address").innerText =
+                            data.display_name || "Address not found";
+                    })
+                    .catch(() => {
+                        document.getElementById("address").innerText =
+                            "Unable to fetch address";
+                    });
+
+                // Generate shareable link (Google Maps)
+                const shareURL = `https://www.google.com/maps?q=${lat},${lng}`;
+                const shareLink = document.getElementById("shareLink");
+                shareLink.href = shareURL;
+                shareLink.innerText = shareURL;
+            },
+            error => {
+                document.getElementById("status").innerText =
+                    "Permission denied or location unavailable.";
+            }
+        );
+    }
+</script>
+
+</body>
+</html>
